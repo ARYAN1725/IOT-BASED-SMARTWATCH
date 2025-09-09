@@ -1,7 +1,35 @@
-import { StyleSheet, Text, View, SafeAreaView, TextInput, placeholder, Pressable, TouchableOpacity } from 'react-native'
-import React from 'react'
+import { StyleSheet, Text, View, SafeAreaView, TextInput, placeholder, Pressable, TouchableOpacity, Button, Alert } from 'react-native'
+import React, {useState} from 'react';
+import {signInWithEmailAndPassword} from 'firebase/auth';
+import {auth} from '../config/firebase';
 
-const Login = ({navigation}) => {
+
+const Login = ({ navigation }) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill in both the fields');
+            return;
+        }
+
+        try{
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log('Logged in: ', userCredential.user.uid);
+
+            //Clear the fields
+            setEmail('');
+            setPassword('');
+
+            //Navigation to Dashboard
+            navigation.replace('MainTabs');
+        } catch(error) {
+            console.log('Login Error: ', error);
+            Alert.alert('Login Failed', error.message);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View>
@@ -12,7 +40,8 @@ const Login = ({navigation}) => {
                 <TextInput
                     style={styles.textInput}
                     placeholder='Enter your email'
-                    onChangeText={(text) => console.log(text)}
+                    value={email}
+                    onChangeText={setEmail}
                     keyboardType='email-address'
                     autoCapitalize='none'
                     />
@@ -20,6 +49,8 @@ const Login = ({navigation}) => {
                     <TextInput 
                     style={styles.textInput}
                     placeholder='Enter your password'
+                    value={password}
+                    onChangeText={setPassword}
                     secureTextEntry={true}
                     />
             </View>
@@ -29,14 +60,14 @@ const Login = ({navigation}) => {
                     <Text style={styles.link}>Forgot Password?</Text>
                 </TouchableOpacity>
                 
-                {/* ✅ Make SignUp clickable and navigate */}
+                {/* Make SignUp clickable and navigate */}
                 <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
                     <Text style={styles.link}>New User? SignUp</Text>
                 </TouchableOpacity>
             </View>
 
             <View>
-                <Pressable style={styles.button}>
+                <Pressable style={styles.button} onPress={handleLogin}>
                     <Text style={styles.buttonText}>SUBMIT</Text>
                 </Pressable>
             </View>
