@@ -10,50 +10,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('onAuthStateChanged -> user:', user?.uid ?? null);
-
       if (!user) {
-        // not signed in
-        if (mounted) {
-          setUsername(null);
-          setLoading(false);
-        }
+        setUsername(null);
+        setLoading(false);
         return;
       }
-
+  
       try {
-        // Try to read user's document from Firestore
-        const userRef = doc(db, 'users', user.uid);
-        const snap = await getDoc(userRef);
-
-        console.log('Firestore user doc exists:', snap.exists());
+        const snap = await getDoc(doc(db, "users", user.uid));
+  
         if (snap.exists()) {
           const data = snap.data();
-          console.log('Firestore user doc data:', data);
-          if (mounted) setUsername(data.username ?? user.displayName ?? user.email ?? 'User');
+          setUsername(data.username || "User");
         } else {
-          // No user doc found — fallback to auth profile
-          console.warn('No user document found for uid:', user.uid);
-          if (mounted) setUsername(user.displayName ?? user.email ?? 'User');
+          setUsername("User");
         }
-      } catch (err) {
-        console.error('Error fetching user doc:', err);
-        // Firestore read may be blocked by rules or network error
-        if (mounted) setUsername(user.displayName ?? user.email ?? 'User');
+      } catch (error) {
+        console.error("Error fetching username:", error);
+        setUsername("User");
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     });
-
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
+  
+    return unsubscribe;
   }, []);
-
+  
   // Show spinner until we determine the username
   if (loading) {
     return (
@@ -65,7 +48,7 @@ const Dashboard = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text>Dashboard</Text>
+      {/* <Text>Dashboard</Text> */}
 
       <View style={styles.welcomeContainer}>
         <Text style={styles.welcomeText}> Welcome {username ? username : 'User'}!</Text>
