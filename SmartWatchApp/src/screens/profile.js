@@ -14,9 +14,25 @@ const Profile = ({ navigation }) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
+
+      let data = {
+        email: user.email,
+        username: user.displayName || 'User',
+        lastLogin: user.metadata?.lastSignInTime || null,
+        createdAt: user.metadata?.creationTime || null,
+      };
+
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) setUserData(userDoc.data());
-    } catch (error) {
+      if (userDoc.exists()) {
+        data = {...data, ...userDoc.data()};
+      } 
+    
+    data.lastLogin = user.metadata?.lastSignInTime || null;
+    data.email = user.email;
+
+    setUserData(data);
+    }
+    catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
@@ -95,7 +111,7 @@ const Profile = ({ navigation }) => {
       {uploading && <ActivityIndicator size="small" color="blue" />}
       <Text style={styles.username}>{userData?.username || 'User'}</Text>
       <Text>Email: {userData?.email}</Text>
-      <Text>Last Login: {userData?.lastLogin ? new Date(userData.lastLogin.seconds * 1000).toLocaleString(): 'Not Available'}</Text>
+      <Text>Last Login: {userData?.lastLogin ? userData.lastLogin : 'Not Available'}</Text>
     </SafeAreaView>
   );
 };
