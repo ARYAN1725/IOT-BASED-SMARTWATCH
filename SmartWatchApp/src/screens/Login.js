@@ -1,12 +1,16 @@
-import { StyleSheet, Text, View, SafeAreaView, TextInput, placeholder, Pressable, TouchableOpacity, Button, Alert } from 'react-native'
-import React, {useState} from 'react';
-import {signInWithEmailAndPassword} from 'firebase/auth';
-import {auth} from '../config/firebase';
-
+import { StyleSheet, Text, View, TextInput, Pressable, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient'; // Optional gradient for modern look
+import { ImageBackground, } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 
 const Login = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -14,111 +18,171 @@ const Login = ({ navigation }) => {
             return;
         }
 
-        try{
+        try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             console.log('Logged in: ', userCredential.user.uid);
 
-            //Clear the fields
+            // Clear the fields
             setEmail('');
             setPassword('');
 
-            //Navigation to Dashboard
+            // Navigate to Dashboard
             navigation.replace('MainTabs');
-        } catch(error) {
+        } catch (error) {
             console.log('Login Error: ', error);
             Alert.alert('Login Failed', error.message);
         }
     };
 
     return (
+       
         <SafeAreaView style={styles.container}>
-            <View>
-                <Text style={styles.loginHeading}>Login</Text>
-            </View>
+             <ImageBackground
+                    source={require("../../assets/login.jpg")} 
+                   style={{ flex: 1, width: "100%", height: "100%"   }}
+                    resizeMode="cover"
+                    blurRadius={0}
+                  >
+            <View style={styles.gradient}>
+                <View style={styles.header}>
+                    <Text style={styles.loginHeading}>LOGIN</Text>
+                    <Text style={styles.subHeading}>Sign in to continue</Text>
+                </View>
 
-            <View>       {/* Form will go here */}
-                <TextInput
-                    style={styles.textInput}
-                    placeholder='Enter your email'
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType='email-address'
-                    autoCapitalize='none'
+                <View style={styles.formContainer}>
+                    <TextInput
+                        style={styles.textInput}
+                        placeholder='Email'
+                        placeholderTextColor="#888"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType='email-address'
+                        autoCapitalize='none'
+                        selectionColor="#ccc"
                     />
-
-                    <TextInput 
-                    style={styles.textInput}
-                    placeholder='Enter your password'
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={true}
+                    <View style={styles.passwordContainer}>
+                    <TextInput
+                        style={styles.textInputPassword}
+                        placeholder='Password'
+                        placeholderTextColor="#888"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword} 
+                        selectionColor="#ccc"
                     />
-            </View>
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+  <Ionicons 
+    name={showPassword ? "eye-off" : "eye"} 
+    size={22} 
+    color="#aaa" 
+  />
+</TouchableOpacity>
+  </View>
+                </View>
 
-            <View style={styles.belowFormContainer}>             {/* Forgot Password will go here */}
-            <TouchableOpacity>
-                    <Text style={styles.link}>Forgot Password?</Text>
-                </TouchableOpacity>
-                
-                {/* Make SignUp clickable and navigate */}
-                <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                    <Text style={styles.link}>New User? SignUp</Text>
-                </TouchableOpacity>
-            </View>
+                <View style={styles.belowFormContainer}>
+                    <TouchableOpacity>
+                        <Text style={styles.link}>Forgot Password?</Text>
+                    </TouchableOpacity>
 
-            <View>
+                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                        <Text style={styles.link}>New User? Sign Up</Text>
+                    </TouchableOpacity>
+                </View>
+
                 <Pressable style={styles.button} onPress={handleLogin}>
                     <Text style={styles.buttonText}>SUBMIT</Text>
                 </Pressable>
-            </View>
+                </View>
+            {/* </LinearGradient> */}
+           </ImageBackground>
         </SafeAreaView>
-    )
-}
+         
+    );
+};
 
-export default Login
+export default Login;
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 35,
+        flex: 1,
+        backgroundColor: '#696666ff',
+//         overlay: {
+//     ...StyleSheet.absoluteFillObject,
+//     backgroundColor: 'rgba(0,0,0,0.6)', // dark overlay for readability
+//   },
+    },
+    gradient: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f6f6f6',
+        paddingHorizontal: 20,
+    },
+    header: {
+        marginBottom: 40,
+        alignItems: 'center',
     },
     loginHeading: {
-        fontSize: 18,
+        fontSize: 32,
         fontWeight: 'bold',
+        color: 'white',
+    },
+    subHeading: {
+        fontSize: 16,
+        color: '#aaa',
+        marginTop: 8,
+    },
+    formContainer: {
+        width: '100%',
     },
     textInput: {
-        borderWidth: 1,
-        borderColor: 'black',
+        backgroundColor: '#1e1e1e',
+        color: 'white',
         height: 50,
-        width: 300,
-        marginTop: 15,
+        borderRadius: 12,
+        paddingHorizontal: 15,
         marginBottom: 15,
-        padding: 10,
-        borderRadius: 10,
+        fontSize: 16,
+    },
+    belowFormContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 30,
+    },
+    link: {
+        color: '#e8edf0ff',
+        fontWeight: 'bold',
     },
     button: {
-        backgroundColor: 'skyblue',
-        padding: 12,
-        marginTop: 15,
-        marginBottom: 15,
-        borderRadius: 10,
+        backgroundColor: '#959697ff',
+        width: '100%',
+        paddingVertical: 15,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 5,
     },
     buttonText: {
         color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
+        fontSize: 18,
     },
-    belowFormContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: 300,
-        padding: 10,
-    },
-    link: {
-        color: 'blue',
-        fontWeight: 'bold',
-    }
-})
+    passwordContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#1e1e1e',
+  borderRadius: 12,
+  height: 50,
+  marginBottom: 15,
+  paddingHorizontal: 10,
+},
+textInputPassword: {
+  flex: 1,
+  color: 'white',
+  fontSize: 16,
+},
+});

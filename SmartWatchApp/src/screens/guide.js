@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View, SafeAreaView, Image, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, Image, ScrollView } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import React from 'react'
 
 const Guide = ({ navigation }) => {
@@ -9,7 +11,7 @@ const Guide = ({ navigation }) => {
         <Text style={styles.headingText}>Welcome to the user guide!</Text>
       </View>
 
-      <View>  {/*Instructions begin here */}
+      <View> 
         <View style={styles.instructionDiv}>
           <Text style={styles.instructionText}>Connect your Wearable Smartwatch device to the mobile application by enabling ‘bluetooth connection.’</Text>
         </View>
@@ -22,7 +24,7 @@ const Guide = ({ navigation }) => {
         <View style={styles.instructionDiv}>
           <Text style={styles.instructionTextHeading} 
           onPress= {() => navigation.navigate('Dashboard')}>1. Dashboard (Landing Page)</Text>
-          <View style={styles.imageTextWrapper}>  {/*Wrapper for image and text */}
+          <View style={styles.imageTextWrapper}> 
             <Image
               source={require('../../assets/dashboardSs.jpeg')}
               style={{ width: 154, height: 300 }}
@@ -35,7 +37,7 @@ const Guide = ({ navigation }) => {
         <Text style={styles.instructionTextHeading} 
         onPress={() => navigation.navigate('Profile')}>2. Profile</Text>
 
-        {/* Profile Section */}
+
         <View style={styles.imageTextWrapper}>
           <Text style={styles.imageTextWrapperText}>
             Change your profile photograph by clicking on the profile photo icon. Here, you can check your credentials like username, email and last login.
