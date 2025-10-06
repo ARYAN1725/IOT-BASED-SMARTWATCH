@@ -28,7 +28,7 @@ const Dashboard = () => {
     const progress = Math.min(steps / goal, 1); // same progress for all arcs
     
   
-    const getOffset = (radius) =>  4* Math.PI * radius * (1 - progress);
+    const getOffset = (radius) =>  4 * Math.PI * radius * (1 - progress);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
