@@ -25,6 +25,7 @@ import Login from './src/screens/Login';
 import SignUp from './src/screens/SignUp';
 import BMIDetail from './src/screens/BMIDetail';
 import PersonalDetails from './src/screens/PersonalDetails';
+import StepsBlock from './src/screens/StepsBlock';
 
 
 
@@ -78,14 +79,6 @@ const MainTabs = () => {
         headerStyle: { backgroundColor: "#202020" },
         headerTitleStyle: { color: "white", fontSize: 20 },
         headerTintColor: "white",
-         headerRight: () => (
-            <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
-                <Image
-                    source={require("./assets/user.png")}
-                    style={{ width: 30, height: 30, marginRight: 15, borderRadius: 15,tintColor: "#ccc" }}
-                />
-              </TouchableOpacity>
-            ),
   })}
       />
       <Tab.Screen name={profileName} component={Profile} 
@@ -130,6 +123,11 @@ const App = () => {
   name="BMIDetail"
   component={BMIDetail}  
   options={{ headerShown: true, title: 'BMI Details' }}
+/>
+<Stack.Screen
+  name="StepsBlock"
+  component={StepsBlock}  
+  options={{ headerShown: true, title: 'StepsBlock' }}
 />
       </Stack.Navigator>
     </NavigationContainer>

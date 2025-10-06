@@ -1,5 +1,5 @@
 
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal, TextInput } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -8,6 +8,7 @@ import { auth, db } from '../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5, Entypo, Feather } from '@expo/vector-icons';
+import Svg, { Circle } from "react-native-svg";
 
 
 const Dashboard = () => {
@@ -17,6 +18,17 @@ const Dashboard = () => {
   const [weight, setWeight] = useState(null);
   const [bmi, setBmi] = useState(null);
   const navigation = useNavigation();
+  const [steps, setSteps] = useState(3200);
+    const [goal, setGoal] = useState(8000);
+    const [editVisible, setEditVisible] = useState(false);
+    const [newGoal, setNewGoal] = useState(goal.toString());
+  
+    const km = (steps * 0.0008).toFixed(2);
+    const kcal = (steps * 0.04).toFixed(0);
+    const progress = Math.min(steps / goal, 1); // same progress for all arcs
+    
+  
+    const getOffset = (radius) =>  4* Math.PI * radius * (1 - progress);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -64,15 +76,131 @@ const Dashboard = () => {
   }
 
   return (
-     <SafeAreaView style={styles.container}>
+     <View style={styles.container}>
     <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 1}}>
       {/* Steps Section */}
       <View style={styles.stepsContainer}>
-        <View style={styles.stepsBox}>
+<View style={styles.progressContainer}>
+        <Svg height="180" width="360" viewBox="0 0 360 180">
+          {/* Background arcs */}
+          {[160, 130, 100].map((r, i) => (
+            <Circle
+              key={i}
+              cx="180"
+              cy="180"
+              r={r}
+              stroke="#2d2d2d"
+              strokeWidth="20"
+              fill="none"
+            />
+          ))}
+
+          {/* Steps arc */}
+          <Circle
+            cx="180"
+            cy="180"
+            r="160"
+            stroke="#ff7f24"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 160}
+            strokeDashoffset={getOffset(160)}
+            transform="rotate(-180 180 180)"
+          />
+          {/* Km arc */}
+          <Circle
+            cx="180"
+            cy="180"
+            r="130"
+            stroke="#52a8ff"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 130}
+            strokeDashoffset={getOffset(130)}
+            transform="rotate(-180 180 180)"
+          />
+          {/* Kcal arc */}
+          <Circle
+            cx="180"
+            cy="180"
+            r="100"
+            stroke="#b566ff"
+            strokeWidth="20"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 100}
+            strokeDashoffset={getOffset(100)}
+            transform="rotate(-180 180 180)"
+          />
+        </Svg>
+      </View>
+
+            {/* Steps | Km | Kcal Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Image source={require("../../assets/shoes.png")} style={styles.sicon} />
+                <Text style={[styles.label, { color: "#ff7f24" }]}>Step</Text>
+                <Text style={styles.value}>{steps}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Image source={require("../../assets/location.png")} style={styles.sicon} />
+                <Text style={[styles.label, { color: "#52a8ff" }]}>Km</Text>
+                <Text style={styles.value}>{km}</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Image source={require("../../assets/fire.png")} style={styles.sicon} />
+                <Text style={[styles.label, { color: "#b566ff" }]}>Kcal</Text>
+                <Text style={styles.value}>{kcal}</Text>
+              </View>
+            </View>
+      
+            {/* Goal section */}
+            <View style={styles.goalContainer}>
+              <Text style={styles.goalText}>
+                Today’s Steps <Text style={{ color: "#ff7f24" }}>{steps}/{goal}</Text>
+              </Text>
+              <TouchableOpacity onPress={() => setEditVisible(true)} style={styles.editBtn}>
+                <Text style={{ color: "#ff7f24", fontSize: 16 }}>✏️</Text>
+              </TouchableOpacity>
+            </View>
+      
+            {/* Edit Goal Modal */}
+            <Modal visible={editVisible} transparent animationType="fade">
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalBox}>
+                  <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 8 }}>Edit Goal</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={newGoal}
+                    onChangeText={setNewGoal}
+                  />
+                  <View style={{ flexDirection: "row", gap: 12, marginTop: 12 }}>
+                    <TouchableOpacity
+                      style={styles.saveBtn}
+                      onPress={() => {
+                        setGoal(Number(newGoal));
+                        setEditVisible(false);
+                      }}
+                    >
+                      <Text style={{ color: "#fff" }}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditVisible(false)}>
+                      <Text style={{ color: "#fff" }}>Cancel</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
+
+        {/* <View style={styles.stepsBox}> */}
           {/* <View style={styles.stepsIconCircle}>
            <FontAwesome5 name="shoe-prints" size={40} color="black" />
           </View> */}
-           <Image 
+           {/* <Image 
               source={require('../../assets/shoes.png')} 
               style={styles.stepsIconCircle} 
             />
@@ -81,40 +209,41 @@ const Dashboard = () => {
           <Text style={styles.goalText}>Goal</Text>
           <TouchableOpacity style={styles.editGoal}>
             <MaterialIcons name="edit" size={40} color="black" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           
-        </View>
+        {/* </View> */}
 
-        <View style={styles.smallBoxes}>
-          <View style={[styles.smallBox, {backgroundColor: '#2C3E91'}]}>
+        {/* <View style={styles.smallBoxes}> */}
+          {/* <View style={[styles.smallBox, {backgroundColor: '#2C3E91'}]}> */}
             {/* <View style={styles.iconCircleBlue}>
              <Ionicons name="location-outline" size={40} color="black" />
             </View> */}
-            <Image 
+            {/* <Image 
               source={require('../../assets/location.png')} 
               style={styles.iconCircleBlue} 
             />
             <Text style={styles.boxLabel}>Km</Text>
-            <Text style={styles.boxCount}>0</Text>
-          </View>
+            <Text style={styles.boxCount}>0</Text> */}
+          {/* </View> */}
 
-          <View style={[styles.smallBox, {backgroundColor: '#652C91'}]}>
+          {/* <View style={[styles.smallBox, {backgroundColor: '#652C91'}]}> */}
             {/* <View style={styles.iconCirclePurple}>
              <FontAwesome5 name="fire" size={40} color="orange" />
             </View> */}
-            <Image 
+            {/* <Image 
               source={require('../../assets/fire.png')} 
               style={styles.iconCirclePurple} 
             />
             <Text style={styles.boxLabel}>Kcal</Text>
-            <Text style={styles.boxCount}>0</Text>
-          </View>
-        </View> 
+            <Text style={styles.boxCount}>0</Text> */}
+          {/* </View> */}
+        {/* </View>  */}
       </View>
 
 
     <View style={styles.grid}>
-      <TouchableOpacity style={styles.gridItem} onPress={() => router.push('/heart')}>  
+      <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('StepsBlock')}
+         activeOpacity={0.8}>  
           <Text style={styles.healthLabel}>Heart Rate</Text>
           <Text style={styles.noDataSubText}>No Data</Text>
           <Image 
@@ -164,7 +293,7 @@ const Dashboard = () => {
         <Text style={styles.changeOrderText}>Change Order</Text>
       </TouchableOpacity>
     </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -182,14 +311,86 @@ const styles = StyleSheet.create({
 //   },
   },
   stepsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    // flexDirection: 'row',
+    // flexWrap: 'wrap',
     justifyContent: 'space-between',
     backgroundColor: '#222',
     borderRadius: 15,
     padding: 15,
     marginBottom: 15,
     position: 'relative',
+  },
+  progressContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+},
+  statItem: {
+    alignItems: "center",
+},
+sicon: {
+    width: 22,
+    height: 22,
+    marginBottom: 4,
+    tintColor:"#fff"
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  value: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  goalContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  goalText: {
+    color: "#ccc",
+    fontSize: 15,
+  },
+  editBtn: {
+    marginLeft: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBox: {
+    backgroundColor: "#2c2c2c",
+    padding: 20,
+    borderRadius: 12,
+    width: "80%",
+  },
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: "#ff7f24",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: "#555",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
   },
   stepsBox: {
     backgroundColor: '#714916',
@@ -227,11 +428,11 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
   },
-  goalText: {
-    color: '#666',
-    fontSize: 14,
-    marginTop: 10,
-  },
+  // goalText: {
+  //   color: '#666',
+  //   fontSize: 14,
+  //   marginTop: 10,
+  // },
   editGoal: {
     position: 'absolute',
     bottom: 10,
