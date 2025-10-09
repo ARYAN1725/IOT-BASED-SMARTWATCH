@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Platform, ScrollView } from "react-native";
 import { auth, db } from "../config/firebase";
-import { doc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, setDoc, Timestamp, collection, addDoc } from "firebase/firestore";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation } from '@react-navigation/native';
 
-
 export default function PersonalDetails() {
   const [step, setStep] = useState(1); // Step 1 = personal details, Step 2 = set goals
   const navigation = useNavigation(); 
+  const now = new Date();
   // Personal details
   const [name, setName] = useState("");
   const [birthday, setBirthday] = useState(null);
@@ -61,36 +61,54 @@ export default function PersonalDetails() {
     setStep(2);
   };
 
-  const handleSave = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        alert("No user logged in!");
-        return;
-      }
+ const handleSave = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("No user logged in!");
+      return;
+    }
 
-      let heightCm = Number(height);
-      if (heightUnit === "ft") heightCm = height * 30.48;
-      let weightKg = Number(weight);
-      if (weightUnit === "lbs") weightKg = weight / 2.20462;
-      let targetKg = Number(targetWeight);
+    let heightCm = Number(height);
+    if (heightUnit === "ft") heightCm = height * 30.48;
 
-      await setDoc(doc(db, "users", user.uid), {
+    let weightKg = Number(weight);
+    if (weightUnit === "lbs") weightKg = weight / 2.20462;
+
+    let targetKg = Number(targetWeight);
+
+    // Save basic user details
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
         name,
         birthday: birthday ? Timestamp.fromDate(birthday) : null,
         height: heightCm,
         weight: weightKg,
         targetWeight: targetKg,
         stepsGoal: Number(stepsGoal),
-      }, { merge: true });
+      },
+      { merge: true }
+    );
 
-      alert("Details & Goals saved!");
-      navigation.replace("MainTabs"); 
-    } catch (error) {
-      console.error("Error saving:", error);
-      alert("Failed to save data");
-    }
-  };
+    // 🔹 Save BMI record (add this below)
+   const bmi = Number((weightKg / ((heightCm / 100) ** 2)).toFixed(1));
+
+await addDoc(collection(db, "users", user.uid, "bmiRecords"), {
+  date: now.toISOString().split("T")[0], // human-readable date
+  timestamp: Timestamp.fromDate(now),   // exact time
+  height: heightCm,
+  weight: weightKg,
+  bmi: bmi,  // numeric now
+});
+
+    alert("Details & Goals saved!");
+    navigation.replace("MainTabs");
+  } catch (error) {
+    console.error("Error saving:", error);
+    alert("Failed to save data");
+  }
+};
 
   return (
    <KeyboardAwareScrollView

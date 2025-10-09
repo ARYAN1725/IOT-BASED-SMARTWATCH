@@ -1,147 +1,3 @@
-// import React, { useEffect, useState } from 'react';
-// import { StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-// import * as ImagePicker from 'expo-image-picker';
-// import { auth, db, storage } from '../config/firebase';
-// import { doc, getDoc, updateDoc } from 'firebase/firestore';
-// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-// import { SafeAreaView } from 'react-native-safe-area-context';
-
-
-// const Profile = ({ navigation }) => {
-//   const [userData, setUserData] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const [uploading, setUploading] = useState(false);
-
-//   const fetchUserData = async () => {
-//     try {
-//       const user = auth.currentUser;
-//       if (!user) return;
-
-//       let data = {
-//         email: user.email,
-//         username: user.displayName || 'User',
-//         lastLogin: user.metadata?.lastSignInTime || null,
-//         createdAt: user.metadata?.creationTime || null,
-//       };
-
-//       const userDoc = await getDoc(doc(db, 'users', user.uid));
-//       if (userDoc.exists()) {
-//         data = {...data, ...userDoc.data()};
-//       } 
-    
-//     data.lastLogin = user.metadata?.lastSignInTime || null;
-//     data.email = user.email;
-
-//     setUserData(data);
-//     }
-//     catch (error) {
-//       console.log(error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchUserData();
-//   }, []);
-
-//   const pickImage = async () => {
-//     // Ask for permission
-//     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-//     if (!permissionResult.granted) {
-//       alert('Permission to access camera roll is required!');
-//       return;
-//     }
-
-//     // Pick image
-//     let pickerResult = await ImagePicker.launchImageLibraryAsync({
-//       allowsEditing: true,
-//       aspect: [1, 1],
-//       quality: 0.7,
-//     });
-
-//     if (!pickerResult.canceled) {
-//       uploadImage(pickerResult.assets[0].uri);
-//     }
-//   };
-
-//   const uploadImage = async (uri) => {
-//     try {
-//       setUploading(true);
-//       const user = auth.currentUser;
-//       const response = await fetch(uri);
-//       const blob = await response.blob();
-
-//       const storageRef = ref(storage, `profilePics/${user.uid}.jpg`);
-//       await uploadBytes(storageRef, blob);
-
-//       const downloadURL = await getDownloadURL(storageRef);
-
-//       // Save URL to Firestore
-//       await updateDoc(doc(db, 'users', user.uid), { photoURL: downloadURL });
-
-//       setUserData((prev) => ({ ...prev, photoURL: downloadURL }));
-//       Alert.alert('Success', 'Profile picture updated!');
-//     } catch (error) {
-//       console.error(error);
-//       Alert.alert('Error', 'Could not upload photo');
-//     } finally {
-//       setUploading(false);
-//     }
-//   };
-
-//   if (loading) {
-//     return (
-//       <SafeAreaView style={styles.container}>
-//         <ActivityIndicator size="large" />
-//       </SafeAreaView>
-//     );
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <TouchableOpacity onPress={pickImage}>
-//         <Image
-//           source={
-//             userData?.photoURL
-//               ? { uri: userData.photoURL }
-//               : require('../../assets/user.png') // placeholder image
-//           }
-//           style={styles.profilePic}
-//         />
-//       </TouchableOpacity>
-//       {uploading && <ActivityIndicator size="small" color="blue" />}
-//       <Text style={styles.username}>{userData?.username || 'User'}</Text>
-//       <Text>Email: {userData?.email}</Text>
-//       <Text>Last Login: {userData?.lastLogin ? userData.lastLogin : 'Not Available'}</Text>
-//     </SafeAreaView>
-//   );
-// };
-
-// export default Profile;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     // marginTop: 30,
-//     // justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#f6f6f6',
-//   },
-//   profilePic: {
-//     marginTop: 30,
-//     width: 120,
-//     height: 120,
-//     borderRadius: 60,
-//     borderWidth: 2,
-//     borderColor: '#ccc',
-//     marginBottom: 10,
-//   },
-//   username: {
-//     fontSize: 20,
-//     fontWeight: 'bold',
-//   },
-// });
 
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, Alert , Modal, ScrollView  } from 'react-native';
@@ -152,9 +8,14 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useBLE from '../screens/BleManager'; // adjust path if needed
 import { BleManager } from 'react-native-ble-plx';
+import { Platform} from 'react-native';
+import { PermissionsAndroid } from 'react-native';
+
 
 
 const Profile = ({ navigation }) => {
+  const [activeScreen, setActiveScreen] = useState(null); // null, 'goal', 'profile'
+
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -176,8 +37,42 @@ const Profile = ({ navigation }) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const manager = new BleManager();
+  const requestPermissions = async () => {
+  if (Platform.OS === 'android') {
+    const granted = await PermissionsAndroid.requestMultiple([
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    ]);
+    // Check if permissions granted
+    console.log(granted);
+  }
+};
 
+const ensureBluetoothEnabled = async () => {
+  const state = await manager.state();
+  if (state !== 'PoweredOn') {
+    Alert.alert(
+      'Bluetooth Required',
+      'Please turn on Bluetooth to connect to device',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        // { text: 'Open Settings', onPress: () => manager.enable() }, // Android only
+      ]
+    );
+    return false;
+  }
+  return true;
+};
 
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut();
+      navigation.replace('Login'); // Replace with your login screen name
+    } catch (error) {
+      Alert.alert('Error', 'Unable to sign out');
+    }
+  };
   const fetchUserData = async () => {
     try {
       const user = auth.currentUser;
@@ -264,7 +159,7 @@ return (
         source={
           userData?.photoURL
             ? { uri: userData.photoURL }
-            : require('../../assets/user.png') // placeholder image
+            : require('../../assets/user.png')
         }
         style={styles.profilePic}
       />
@@ -272,24 +167,39 @@ return (
     {uploading && <ActivityIndicator size="small" color="blue" />}
 
     <Text style={styles.username}>{userData?.username || 'User'}</Text>
+    <Text style={styles.value}>{userData?.email || 'Not Available'}</Text>
+    {/* Sign Out Button */}
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
 
     {/* Profile Info Section */}
     <View style={styles.infoCard}>
-      <Text style={styles.label}>Email</Text>
-      <Text style={styles.value}>{userData?.email || 'Not Available'}</Text>
+      {/* Row with icons */}
+      <View style={styles.iconRow}>
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("Goal")}
+        >
+          <Image
+            source={require("../../assets/goal.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.iconText}>Goal Setting</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("EditProfile")}
+        >
+          <Image
+            source={require("../../assets/people.png")}
+            style={styles.icon}
+          />
+          <Text style={styles.iconText}>Edit Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
-
-    <View style={styles.infoCard}>
-  <Text style={styles.label}>Birthday</Text>
-  <Text style={styles.value}>
-    {formatDate(userData?.birthday)}
-  </Text>
-</View>
-
-    {/* <View style={styles.infoCard}>
-      <Text style={styles.label}>Gender</Text>
-      <Text style={styles.value}>{userData?.gender || 'Not Set'}</Text>
-    </View> */}
 
     {/* Connect Watch Section */}
     
@@ -301,14 +211,18 @@ return (
 
         {!connectedDevice ? (
           <TouchableOpacity
-            style={styles.connectButton}
-            onPress={() => {
-              startScan();
-              setModalVisible(true);
-            }}
-          >
-            <Text style={styles.connectButtonText}>Connect Watch</Text>
-          </TouchableOpacity>
+  style={styles.connectButton}
+  onPress={async () => {
+    await requestPermissions();
+    const btEnabled = await ensureBluetoothEnabled();
+    if (btEnabled) {
+      startScan();
+      setModalVisible(true);
+    }
+  }}
+>
+  <Text style={styles.connectButtonText}>Connect Watch</Text>
+</TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={[styles.connectButton, { backgroundColor: 'red' }]}
@@ -354,23 +268,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#121212', // dark background
+    backgroundColor: '#121212',
     padding: 20,
   },
   profilePic: {
-    marginTop: 30,
+    marginTop: 5,
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 2,
-    borderColor: '#555',
     marginBottom: 10,
+    tintColor:"#ccc",
   },
   username: {
     fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 20,
+    marginBottom: 2,
   },
   infoCard: {
     width: '100%',
@@ -388,6 +302,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginTop: 4,
+    marginBottom: 7,
   },
   connectCard: {
     width: '100%',
@@ -399,13 +314,13 @@ const styles = StyleSheet.create({
   },
   connectButton: {
     marginTop: 10,
-    backgroundColor: '#0a84ff',
+    backgroundColor: '#f2f4f7ff',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
   connectButtonText: {
-    color: '#fff',
+    color: '#080808ff',
     fontWeight: '600',
   },
    modalContainer: {
@@ -433,4 +348,35 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   closeText: { color: '#fff' },
+  icon: {
+    width: 50,
+    height: 50,
+    marginBottom: 5,
+    tintColor:"#ccc"
+    
+  },
+  iconRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 10,
+    marginTop: 10,
+  },
+  iconContainer: {
+    alignItems: "center",
+  },
+  iconText: {
+    fontSize: 14,
+    color: "#c2bcbcff",
+  },
+  signOutButton: {
+    backgroundColor: '#ff4d4d',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  signOutText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 });

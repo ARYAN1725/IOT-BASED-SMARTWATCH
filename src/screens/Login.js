@@ -45,7 +45,7 @@ const Login = ({ navigation }) => {
                   >
             <View style={styles.gradient}>
                 <View style={styles.header}>
-                    <Text style={styles.loginHeading}>LOGI</Text>
+                    <Text style={styles.loginHeading}>LOGIN</Text>
                     <Text style={styles.subHeading}>Sign in to continue</Text>
                 </View>
 
