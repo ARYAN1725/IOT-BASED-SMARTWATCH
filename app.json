@@ -2,6 +2,7 @@
   "expo": {
     "name": "SmartWatchApp",
     "slug": "SmartWatchApp",
+    "owner": "sankalp1604",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
