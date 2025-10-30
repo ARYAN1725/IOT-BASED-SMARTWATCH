@@ -23,6 +23,7 @@ import BmiScreen from './src/screens/BmiScreen';
 import PersonalDetails from './src/screens/PersonalDetails';
 import Heartrate from './src/screens/Heartrate';
 import EditProfile from './src/screens/EditProfile';
+import BLEScreen from './src/screens/BLEScreen';
 
 
 // Screen names
@@ -93,6 +94,7 @@ const App = () => {
         <Stack.Screen name="PersonalDetails" component={PersonalDetails} options={{ headerShown: false }} />
         <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
         <Stack.Screen name="Profile" component={Profile} options={{ headerShown: false }} />
+        <Stack.Screen name="BLEScreen" component={BLEScreen} options={{ headerShown: false }} />
         <Stack.Screen
   name="BmiScreen"
   component={BmiScreen}

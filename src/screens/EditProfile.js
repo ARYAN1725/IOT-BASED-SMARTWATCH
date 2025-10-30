@@ -5,12 +5,21 @@ import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { db, auth } from "../config/firebase"; // adjust path
 import { useNavigation } from "@react-navigation/native";
 import { collection, addDoc, getDocs } from "firebase/firestore";
+import DropDownPicker from "react-native-dropdown-picker";
+
 
 
 export default function EditProfile() {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [openGender, setOpenGender] = useState(false);
+const [genderOptions, setGenderOptions] = useState([
+  { label: "Male", value: "Male" },
+  { label: "Female", value: "Female" },
+  { label: "Other", value: "Other" },
+]);
+
   const [userData, setUserData] = useState({
     email: "",
     name: "",
@@ -151,34 +160,34 @@ await addDoc(collection(db, "users", user.uid, "bmiRecords"), {
       </View>
 
       <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Height (cm)</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={userData.height?.toString() || ""}
-          onChangeText={(text) => setUserData({ ...userData, height: text })}
-        />
-      </View>
-
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Weight (kg)</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={userData.weight?.toString() || ""}
-          onChangeText={(text) => setUserData({ ...userData, weight: text })}
-        />
-      </View>
-
-      <View style={styles.fieldContainer}>
         <Text style={styles.label}>Gender</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Male / Female / Other"
-          value={userData.gender}
-          onChangeText={(text) => setUserData({ ...userData, gender: text })}
-        />
+        <DropDownPicker
+    open={openGender}
+    value={userData.gender}
+    items={genderOptions}
+    setOpen={(val) => setOpenGender(val)}
+    setValue={(callback) =>
+      setUserData((prev) => ({ ...prev, gender: callback(prev.gender) }))
+    }
+    setItems={setGenderOptions}
+    placeholder="Select Gender"
+    containerStyle={{ flex: 1, marginLeft: 10 }}
+    style={{
+      backgroundColor: "#2a2a2a",
+      borderColor: "#555",
+      height: 45,
+    }}
+    dropDownContainerStyle={{
+      backgroundColor: "#2a2a2a",
+      borderColor: "#555",
+      zIndex: 5000,
+    }}
+    textStyle={{ color: "#fff", fontSize: 16 }}
+  />
       </View>
+
+      
+
 
       <TouchableOpacity
         style={styles.saveButton}

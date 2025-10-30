@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, Alert , Modal, ScrollView  } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { auth, db, storage } from '../config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -14,8 +13,7 @@ import { PermissionsAndroid } from 'react-native';
 
 
 const Profile = ({ navigation }) => {
-  const [activeScreen, setActiveScreen] = useState(null); // null, 'goal', 'profile'
-
+  const [activeScreen, setActiveScreen] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -23,9 +21,9 @@ const Profile = ({ navigation }) => {
   const formatDate = (timestamp) => {
     if (!timestamp) return 'Not Set';
     if (timestamp.toDate) {
-      return timestamp.toDate().toDateString(); // Firestore Timestamp
+      return timestamp.toDate().toDateString();
     }
-    return String(timestamp); // fallback
+    return String(timestamp);
   };
   const {
     devices,
@@ -68,7 +66,7 @@ const ensureBluetoothEnabled = async () => {
   const handleSignOut = async () => {
     try {
       await auth.signOut();
-      navigation.replace('Login'); // Replace with your login screen name
+      navigation.replace('Login');
     } catch (error) {
       Alert.alert('Error', 'Unable to sign out');
     }
@@ -102,48 +100,6 @@ const ensureBluetoothEnabled = async () => {
     fetchUserData();
   }, []);
 
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      alert('Permission to access camera roll is required!');
-      return;
-    }
-
-    let pickerResult = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (!pickerResult.canceled) {
-      uploadImage(pickerResult.assets[0].uri);
-    }
-  };
-
-  const uploadImage = async (uri) => {
-    try {
-      setUploading(true);
-      const user = auth.currentUser;
-      const response = await fetch(uri);
-      const blob = await response.blob();
-
-      const storageRef = ref(storage, `profilePics/${user.uid}.jpg`);
-      await uploadBytes(storageRef, blob);
-
-      const downloadURL = await getDownloadURL(storageRef);
-
-      await updateDoc(doc(db, 'users', user.uid), { photoURL: downloadURL });
-
-      setUserData((prev) => ({ ...prev, photoURL: downloadURL }));
-      Alert.alert('Success', 'Profile picture updated!');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Could not upload photo');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -154,13 +110,9 @@ const ensureBluetoothEnabled = async () => {
 
 return (
   <SafeAreaView style={styles.container}>
-    <TouchableOpacity onPress={pickImage}>
+    <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
       <Image
-        source={
-          userData?.photoURL
-            ? { uri: userData.photoURL }
-            : require('../../assets/user.png')
-        }
+        source={require("../../assets/people.png")}
         style={styles.profilePic}
       />
     </TouchableOpacity>
@@ -173,34 +125,6 @@ return (
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
 
-    {/* Profile Info Section */}
-    <View style={styles.infoCard}>
-      {/* Row with icons */}
-      <View style={styles.iconRow}>
-        <TouchableOpacity
-          style={styles.iconContainer}
-          onPress={() => navigation.navigate("Goal")}
-        >
-          <Image
-            source={require("../../assets/goal.png")}
-            style={styles.icon}
-          />
-          <Text style={styles.iconText}>Goal Setting</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.iconContainer}
-          onPress={() => navigation.navigate("EditProfile")}
-        >
-          <Image
-            source={require("../../assets/people.png")}
-            style={styles.icon}
-          />
-          <Text style={styles.iconText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-
     {/* Connect Watch Section */}
     
     <View style={styles.connectCard}>
@@ -211,18 +135,18 @@ return (
 
         {!connectedDevice ? (
           <TouchableOpacity
-  style={styles.connectButton}
-  onPress={async () => {
-    await requestPermissions();
-    const btEnabled = await ensureBluetoothEnabled();
-    if (btEnabled) {
-      startScan();
-      setModalVisible(true);
-    }
-  }}
->
-  <Text style={styles.connectButtonText}>Connect Watch</Text>
-</TouchableOpacity>
+              style={styles.connectButton}
+              onPress={async () => {
+                await requestPermissions();
+                const btEnabled = await ensureBluetoothEnabled();
+                if (btEnabled) {
+                  startScan();
+                  setModalVisible(true);
+                }
+              }}
+          >
+           <Text style={styles.connectButtonText}>Connect Watch</Text>
+          </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={[styles.connectButton, { backgroundColor: 'red' }]}

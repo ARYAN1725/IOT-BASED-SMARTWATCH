@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Platform, ScrollView } from "react-native";
 import { auth, db } from "../config/firebase";
-import { doc, setDoc, Timestamp, collection, addDoc } from "firebase/firestore";
+import { doc, setDoc, Timestamp, getDoc, collection, addDoc } from "firebase/firestore";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -36,6 +36,29 @@ export default function PersonalDetails() {
   const [stepsGoal, setStepsGoal] = useState(""); 
 
   const INPUT_HEIGHT = 50; // consistent input & dropdown height
+  useEffect(() => {
+  const fetchUserName = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        if (data.username) {
+          setName(data.username); // ✅ changed from data.name → data.username
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching username:", error);
+    }
+  };
+
+  fetchUserName();
+}, []);
+
 
   const calculateBMI = (weightKg, heightCm) => {
     const heightM = heightCm / 100;

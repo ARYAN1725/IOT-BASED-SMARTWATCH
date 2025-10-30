@@ -281,19 +281,21 @@ const Dashboard = () => {
           />
         </TouchableOpacity>
 
-        <View style={styles.gridItem}>
-          <Text style={styles.healthLabel}>Sleep</Text>
-          <Text style={styles.noDataSubText}>11hr 38mins</Text>
+        <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('BLEScreen')}
+         activeOpacity={0.8}
+       > 
+          <Text style={styles.healthLabel}>Watch</Text>
+          <Text style={styles.noDataSubText}>Data</Text>
           <Image 
-              source={require('../../assets/sleep.png')} 
+              source={require('../../assets/temporary.png')} 
               style={styles.icon} 
           />
-        </View>
+        </TouchableOpacity>
       </View>
-
+{/* 
       <TouchableOpacity style={styles.changeOrderButton}>
         <Text style={styles.changeOrderText}>Change Order</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </ScrollView>
     </View>
     </SafeAreaProvider>

@@ -7,12 +7,12 @@ const Heartrate = () => {
   return (
     <View style={styles.container}>
        
-    <Text style={styles.Heading}>Heartrate: NoData</Text>     
-    {/* <Image
-                    source={require("../../assets/increase.png")}
-                    style={{ width: 250, height: 250 ,marginLeft:40}}
+    <Text style={styles.Heading}>Heartrate: No Data</Text>     
+    <Image
+                    source={require("../../assets/dead.png")}
+                    style={{ width: 150, height: 150 ,marginLeft:40}}
                     resizeMode="contain"
-                  />              */}
+                  />             
     </View>
     
   );
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
         // flex: 1,
         // justifyContent: 'center',
         alignItems: 'center',
-        // marginTop:30,
+        marginTop:30,
         paddingHorizontal: 20,
     },
 });
