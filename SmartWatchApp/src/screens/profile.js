@@ -1,3 +1,4 @@
+// profile.js
 // import React, { useEffect, useState } from 'react';
 // import { StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 // import * as ImagePicker from 'expo-image-picker';
@@ -149,12 +150,29 @@ import * as ImagePicker from 'expo-image-picker';
 import { auth, db, storage } from '../config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// 🔽 ADD BELOW EXISTING FIREBASE IMPORTS
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  orderBy,
+  getDocs
+} from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Print from 'expo-print';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { generateReportHTML } from './template_doc'; // path is CORRECT
 
 const Profile = ({ navigation }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  // 🔽 ADD IT HERE
+const [reports, setReports] = useState([]);
+
   // Convert timestamp safely
 const formatDate = (timestamp) => {
   if (!timestamp) return 'Not Set';
@@ -164,35 +182,126 @@ const formatDate = (timestamp) => {
   return String(timestamp); // fallback
 };
 
+// ADD IT HERE ⬇️
+const dummyReadings = {
+  heartRate: 92,          // bpm
+  spo2: 97,               // %
+  temperature: 37.4,      // °C
+  systolicBP: 142,        // mmHg
+  diastolicBP: 95,        // mmHg
+};
 
-  const fetchUserData = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
 
-      let data = {
-        email: user.email,
-        username: user.displayName || 'User',
-        lastLogin: user.metadata?.lastSignInTime || null,
-        createdAt: user.metadata?.creationTime || null,
-      };
+// ADD IT HERE ⬇️
+// ADD IT HERE ⬇️ (inside Profile component, above return)
 
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        data = { ...data, ...userDoc.data() };
-      }
 
-      setUserData(data);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
+// =========================
+// GENERATE + UPLOAD PDF
+// =========================
+const handleGenerateReport = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user || !userData) {
+      Alert.alert('Error', 'User not loaded');
+      return;
     }
-  };
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+    // 1️⃣ Generate PDF from HTML
+    const html = generateReportHTML({
+      username: userData.username,
+      date: new Date().toDateString(),
+      bmi: 22.4, // dummy
+    });
+
+    const pdf = await Print.printToFileAsync({ html });
+
+    // 2️⃣ Upload to Firebase Storage
+    const fileName = `Health_Report_${Date.now()}.pdf`;
+    const storageRef = ref(storage, `reports/${user.uid}/${fileName}`);
+
+    const pdfBlob = await (await fetch(pdf.uri)).blob();
+    await uploadBytes(storageRef, pdfBlob, {
+      contentType: 'application/pdf',
+    });
+
+    const downloadURL = await getDownloadURL(storageRef);
+
+    // 3️⃣ Save metadata
+    await addDoc(collection(db, 'reports'), {
+      userId: user.uid,
+      fileName,
+      fileUrl: downloadURL,
+      createdAt: serverTimestamp(),
+    });
+
+    Alert.alert('Success', 'Report generated');
+    fetchReports(); // refresh UI
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Failed to generate report');
+  }
+};
+
+// ==========================
+// FETCH REPORTS (Firestore)
+// ==========================
+const fetchReports = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const q = query(
+      collection(db, 'reports'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const snapshot = await getDocs(q);
+
+    const data = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    setReports(data);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+  }
+};
+
+// ==========================
+// FETCH USER PROFILE DATA
+// ==========================
+const fetchUserData = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    let data = {
+      email: user.email,
+      username: user.displayName || 'User',
+      lastLogin: user.metadata?.lastSignInTime || null,
+      createdAt: user.metadata?.creationTime || null,
+    };
+
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    if (userDoc.exists()) {
+      data = { ...data, ...userDoc.data() };
+    }
+
+    setUserData(data);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchUserData();
+  fetchReports();
+}, []);
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -285,12 +394,55 @@ return (
 
     {/* Connect Watch Section */}
     <View style={styles.connectCard}>
-      <Text style={styles.label}>Device</Text>
-      <Text style={styles.value}>No device connected</Text>
-      <TouchableOpacity style={styles.connectButton}>
-        <Text style={styles.connectButtonText}>Connect Watch</Text>
-      </TouchableOpacity>
-    </View>
+  <Text style={styles.label}>Device</Text>
+  <Text style={styles.value}>No device connected</Text>
+
+  <TouchableOpacity style={styles.connectButton}>
+    <Text style={styles.connectButtonText}>Connect Watch</Text>
+  </TouchableOpacity>
+
+{/* Reports Section */}
+{/* REPORTS LIST */}
+<View style={{ width: '100%', marginTop: 20 }}>
+  <Text style={{ color: '#fff', fontSize: 18, marginBottom: 10 }}>
+    Your Reports
+  </Text>
+
+  {reports.length === 0 && (
+    <Text style={{ color: '#aaa' }}>No reports generated yet</Text>
+  )}
+
+  {reports.map(report => (
+    <TouchableOpacity
+      key={report.id}
+      onPress={() => Sharing.shareAsync(report.fileUrl)}
+      style={{
+        backgroundColor: '#1e1e1e',
+        padding: 12,
+        borderRadius: 10,
+        marginBottom: 8,
+      }}
+    >
+      <Text style={{ color: '#fff', fontWeight: '600' }}>
+        {report.fileName}
+      </Text>
+      <Text style={{ color: '#aaa', fontSize: 12 }}>
+        {report.createdAt?.toDate().toDateString()}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
+
+  {/* Generate Report Button */}
+  
+  <TouchableOpacity
+    style={[styles.connectButton, styles.reportButton]}
+    onPress={handleGenerateReport}
+  >
+    <Text style={styles.connectButtonText}>Generate Health Report</Text>
+  </TouchableOpacity>
+</View>
+
   </SafeAreaView>
 );
 };
@@ -355,4 +507,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  reportButton: {
+    backgroundColor: '#34c759', // green for report/health
+    marginTop: 12,
+  },  
 });

@@ -14,7 +14,6 @@ import { Image } from "react-native";
 import { TouchableOpacity } from 'react-native';
 import { LogBox } from 'react-native';
 
-
 // Screens
 import Splash from './src/screens/Splash';
 import Dashboard from './src/screens/dashboard';
@@ -25,13 +24,12 @@ import Login from './src/screens/Login';
 import SignUp from './src/screens/SignUp';
 import BMIDetail from './src/screens/BMIDetail';
 import PersonalDetails from './src/screens/PersonalDetails';
-
-
-
+import Charts from './src/screens/charts';
 
 // Screen names
 const homeName = "Dashboard";
 const profileName = "Profile";
+const chartsName = "Charts";
 // const analyticsName = "Analytics";
 // const guideName = "Guide";
 
@@ -48,6 +46,8 @@ const MainTabs = () => {
 
           if (route.name === homeName) {
             icon = require("./assets/heart.png");
+          } else if (route.name === chartsName) {
+            icon = require("./assets/analytics_logo.png"); // any icon you like
           } else if (route.name === profileName) {
             icon = require("./assets/smart-watch.png");
           // } else if (route.name === analyticsName) {
@@ -98,6 +98,19 @@ const MainTabs = () => {
       />
       {/* <Tab.Screen name={analyticsName} component={Analytics} /> */}
       {/* <Tab.Screen name={guideName} component={Guide} /> */}
+
+      {/* Charts Screen begins here */}
+      <Tab.Screen
+  name={chartsName}
+  component={Charts}
+  options={{
+    headerTitle: "Health Analytics",
+    headerTitleAlign: "left",
+    headerStyle: { backgroundColor: "#202020" },
+    headerTitleStyle: { color: "white", fontSize: 20 },
+  }}
+/>
+
     </Tab.Navigator>
   );
 };
